@@ -1,0 +1,99 @@
+# Bluetooth RTOS Speaker Project
+
+This project demonstrates a Bluetooth speaker system using an ESP32 microcontroller, FreeRTOS, and the MAX98357A I2S audio amplifier. The project showcases how to combine Bluetooth Classic (A2DP) for audio streaming and Bluetooth Low Energy (BLE) for control and status, all managed with RTOS tasks and synchronization primitives.
+
+---
+
+## Features
+
+- **Bluetooth Classic (A2DP):**  
+  ESP32 acts as a Bluetooth audio sink ("ESP32 Speaker") for streaming audio from phones or PCs.
+- **Bluetooth Low Energy (BLE):**  
+  BLE is used for control (play, pause, next, previous) and status (battery, volume, metadata) via a custom GATT service.
+- **RTOS Architecture:**  
+  Uses FreeRTOS tasks, queues, and mutexes for safe, concurrent operation.
+- **Audio Output:**  
+  Audio data is sent to a MAX98357A I2S amplifier and played on a connected speaker.
+- **Metadata & Status:**  
+  AVRCP metadata (track info) and device status can be sent to BLE clients.
+- **Unit Testing:**  
+  Includes a test directory for PlatformIO unit tests.
+
+---
+
+## Directory Structure
+
+```
+src/
+  main.cpp                // Main entry point, RTOS setup
+  audio/
+    audio_manager.cpp/h   // Audio task, command queue, mutex
+  ble/
+    ble_manager.cpp/h     // BLE GATT server, control/status
+  bt/
+    bt_manager.cpp/h      // BT Classic (A2DP) sink, audio callbacks
+  tests/
+    sound.cpp             // Example unit tests
+```
+
+---
+
+## How It Works
+
+- **Pairing:**  
+  - ESP32 advertises as a Bluetooth speaker for BT Classic pairing and as a BLE device for control.
+  - After pairing, audio streams over BT Classic; control/status is handled via BLE.
+- **Control:**  
+  - BLE clients can send commands (play, pause, etc.) which are processed by the audio task.
+- **Audio:**  
+  - Audio data received via A2DP is sent to the I2S amplifier.
+  - Playback can be paused/muted via BLE commands.
+- **Metadata:**  
+  - AVRCP metadata (if available) is received from the audio source and can be forwarded to BLE clients.
+
+---
+
+## Getting Started
+
+1. **Hardware Required:**
+   - ESP32 development board
+   - MAX98357A I2S amplifier
+   - 4Ω speaker
+
+2. **Setup:**
+   - Clone this repository.
+   - Connect the MAX98357A to the ESP32 I2S pins.
+   - Configure `platformio.ini` with the required libraries.
+
+3. **Build & Upload:**
+   - Use PlatformIO to build and upload the firmware.
+
+4. **Pairing & Testing:**
+   - Pair your phone/PC with "ESP32 Speaker" for audio.
+   - Use a BLE app (e.g., nRF Connect) to connect to "MSHAudioPlayer" for control/status.
+
+---
+
+## Useful Links
+
+- [PlatformIO Unit Testing](https://docs.platformio.org/en/latest/advanced/unit-testing/index.html)
+- [ESP32-A2DP Library](https://github.com/pschatzmann/ESP32-A2DP)
+- [ESP32 BLE Arduino](https://github.com/nkolban/ESP32_BLE_Arduino)
+
+---
+
+## License
+
+This project is for educational and non-commercial use. See [LICENSE](LICENSE) for details.
+sequenceDiagram
+    participant BLE_Client as BLE Client (App)
+    participant ESP32 as ESP32
+    participant AudioTask as Audio Task
+    participant BTTask as BT Task
+
+    BLE_Client->>ESP32: Write "PLAY" to BLE characteristic
+    ESP32->>AudioTask: Send CMD_PLAY via queue
+    AudioTask->>BTTask: (optional) Notify BT task to prepare for audio
+    BTTask->>ESP32: Receives audio data via A2DP
+    BTTask->>AudioTask: Pass audio data (buffer/queue)
+    AudioTask->>ESP32: Output audio to I2S (MAX98357A)

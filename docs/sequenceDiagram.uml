@@ -1,0 +1,12 @@
+sequenceDiagram
+    participant BLE_Client as BLE Client (App)
+    participant ESP32 as ESP32
+    participant AudioTask as Audio Task
+    participant BTTask as BT Task
+
+    BLE_Client->>ESP32: Write "PLAY" to BLE characteristic
+    ESP32->>AudioTask: Send CMD_PLAY via queue
+    AudioTask->>BTTask: (optional) Notify BT task to prepare for audio
+    BTTask->>ESP32: Receives audio data via A2DP
+    BTTask->>AudioTask: Pass audio data (buffer/queue)
+    AudioTask->>ESP32: Output audio to I2S (MAX98357A)

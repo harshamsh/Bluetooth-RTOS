@@ -1,0 +1,15 @@
+graph TD
+    BLE_Client(BLE Client App)
+    Phone(Phone/PC)
+    ESP32[ESP32]
+    AudioTask[Audio Task]
+    BTTask[BT Task]
+    BLEManager[BLE Manager]
+    BTManager[BT Manager]
+    MAX98357A[MAX98357A I2S Amp]
+
+    BLE_Client -- BLE --> BLEManager
+    Phone -- BT Classic (A2DP) --> BTManager
+    BLEManager -- Queue/Command --> AudioTask
+    BTManager -- Audio Data --> AudioTask
+    AudioTask -- I2S --> MAX98357A
