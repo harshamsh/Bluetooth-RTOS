@@ -2,12 +2,21 @@
 #include "audio/audio_manager.h"
 #include "ble/ble_manager.h"
 #include "bt/bt_manager.h"
+#include <BluetoothA2DPSink.h>
+
 
 TaskHandle_t btTaskHandle = NULL;
-
+extern void displayTask(void *pvParameters);
+TaskHandle_t displayTaskHandle = NULL;
 TaskHandle_t bleTaskHandle = NULL;
-
+#define PIN_PLAY 32
+#define PIN_PAUSE 33
+#define PIN_NEXT 34
 void setup() {
+
+  pinMode(PIN_PLAY, INPUT_PULLUP);
+    pinMode(PIN_PAUSE, INPUT_PULLUP);
+    pinMode(PIN_NEXT, INPUT_PULLUP);
   Serial.begin(115200);
 
   audioCommandQueue = xQueueCreate(4, sizeof(AudioCommand));
@@ -26,10 +35,27 @@ void setup() {
   xTaskCreatePinnedToCore(audioTask, "AudioTask", 2048, NULL, 2, &audioTaskHandle, 1); // Priority 2
   // xTaskCreatePinnedToCore(bleTask, "BLETask", 8192, NULL, 1, &bleTaskHandle, 1);       // Priority 1
   // xTaskCreatePinnedToCore(btTask, "BTTask", 8192, NULL, 1, &btTaskHandle, 1);         // Priority 1
-
+  xTaskCreatePinnedToCore(displayTask, "DisplayTask", 4096, NULL, 1, &displayTaskHandle, 1);
   setupBLE();
   setupBT();
 
 }
 
-void loop() {}
+void loop() {
+
+  if (digitalRead(PIN_PLAY) == LOW) {
+        bt_play();
+        Serial.println("Play pressed");
+        delay(200);
+    }
+    if (digitalRead(PIN_PAUSE) == LOW) {
+        bt_pause();
+        Serial.println("Pause pressed");
+        delay(200);
+    }
+    // if (digitalRead(PIN_NEXT) == LOW) {
+    //     bt_next();
+    //     delay(200);
+
+    // }
+}

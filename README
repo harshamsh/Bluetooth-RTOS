@@ -18,6 +18,8 @@ This project demonstrates a Bluetooth speaker system using an ESP32 microcontrol
   AVRCP metadata (track info) and device status can be sent to BLE clients.
 - **Unit Testing:**  
   Includes a test directory for PlatformIO unit tests.
+- **OLED Display:**  
+  SSD1306/SSD1309 128x64 I2C display shows track info and audio visualization.
 
 ---
 
@@ -32,9 +34,40 @@ src/
     ble_manager.cpp/h     // BLE GATT server, control/status
   bt/
     bt_manager.cpp/h      // BT Classic (A2DP) sink, audio callbacks
+  display/
+    display_task.cpp/h    // OLED display task
   tests/
     sound.cpp             // Example unit tests
 ```
+
+---
+
+## Hardware Connections
+
+### **ESP32 Pinout**
+
+| Peripheral      | ESP32 Pin | Module Pin      | Notes                        |
+|-----------------|-----------|-----------------|------------------------------|
+| **MAX98357A**   |           |                 |                              |
+| BCLK            | GPIO 26   | BCLK            | I2S Bit Clock                |
+| LRCK            | GPIO 25   | LRC             | I2S Word Select (Left/Right) |
+| DIN             | GPIO 22   | DIN             | I2S Data Out                 |
+| VCC             | 3.3V      | VIN             | Power                        |
+| GND             | GND       | GND             | Ground                       |
+| **Speaker**     | -         | SPK+ / SPK-     | Connect to MAX98357A output  |
+| **OLED Display**|           |                 | SSD1306/SSD1309 I2C 128x64   |
+| SDA             | GPIO 21   | SDA             | I2C Data                     |
+| SCL             | GPIO 22   | SCL             | I2C Clock                    |
+| VCC             | 3.3V/5V   | VCC             | Power (check module spec)    |
+| GND             | GND       | GND             | Ground                       |
+| **Buttons**     |           |                 | Use push buttons to GND      |
+| Play            | GPIO 32   | One side of button | Other side to GND         |
+| Pause           | GPIO 33   | One side of button | Other side to GND         |
+| Next            | GPIO 34   | One side of button | Other side to GND         |
+
+**Note:**  
+- Use `INPUT_PULLUP` for button pins in code.
+- Connect speaker to MAX98357A output terminals.
 
 ---
 
@@ -45,11 +78,13 @@ src/
   - After pairing, audio streams over BT Classic; control/status is handled via BLE.
 - **Control:**  
   - BLE clients can send commands (play, pause, etc.) which are processed by the audio task.
+  - Physical buttons on ESP32 can also control playback.
 - **Audio:**  
   - Audio data received via A2DP is sent to the I2S amplifier.
-  - Playback can be paused/muted via BLE commands.
-- **Metadata:**  
-  - AVRCP metadata (if available) is received from the audio source and can be forwarded to BLE clients.
+  - Playback can be paused/muted via BLE commands or buttons.
+- **Metadata & Display:**  
+  - AVRCP metadata (if available) is received from the audio source and shown on the OLED display.
+  - Audio visualization (VU meter) is also displayed.
 
 ---
 
@@ -59,10 +94,12 @@ src/
    - ESP32 development board
    - MAX98357A I2S amplifier
    - 4Ω speaker
+   - SSD1306/SSD1309 128x64 I2C OLED display
+   - 3 push buttons
 
 2. **Setup:**
    - Clone this repository.
-   - Connect the MAX98357A to the ESP32 I2S pins.
+   - Connect the MAX98357A, OLED display, speaker, and buttons to the ESP32 as shown above.
    - Configure `platformio.ini` with the required libraries.
 
 3. **Build & Upload:**
@@ -71,6 +108,7 @@ src/
 4. **Pairing & Testing:**
    - Pair your phone/PC with "ESP32 Speaker" for audio.
    - Use a BLE app (e.g., nRF Connect) to connect to "MSHAudioPlayer" for control/status.
+   - Track info and audio visualization will appear on the OLED display.
 
 ---
 
@@ -79,12 +117,19 @@ src/
 - [PlatformIO Unit Testing](https://docs.platformio.org/en/latest/advanced/unit-testing/index.html)
 - [ESP32-A2DP Library](https://github.com/pschatzmann/ESP32-A2DP)
 - [ESP32 BLE Arduino](https://github.com/nkolban/ESP32_BLE_Arduino)
+- [U8g2 OLED Library](https://github.com/olikraus/U8g2)
 
 ---
 
 ## License
 
 This project is for educational and non-commercial use. See [LICENSE](LICENSE) for details.
+
+---
+
+## Sequence Diagram
+
+```mermaid
 sequenceDiagram
     participant BLE_Client as BLE Client (App)
     participant ESP32 as ESP32
@@ -97,3 +142,4 @@ sequenceDiagram
     BTTask->>ESP32: Receives audio data via A2DP
     BTTask->>AudioTask: Pass audio data (buffer/queue)
     AudioTask->>ESP32: Output audio to I2S (MAX98357A)
+```
