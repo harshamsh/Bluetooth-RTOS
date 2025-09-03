@@ -8,7 +8,6 @@ void displayTask(void *pvParameters);
 extern char track_metadata[81];
 extern volatile int audio_level;
 extern SemaphoreHandle_t displayMutex;
+
 extern QueueHandle_t metadataQueue;
-// Helper functions for thread-safe updates
-void updateMetadata(const char* new_metadata);
-void updateAudioLevel(int new_level);
+void updateMetadataFromQueue();

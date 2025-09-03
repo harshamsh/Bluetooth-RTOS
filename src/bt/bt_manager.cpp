@@ -10,7 +10,7 @@ static unsigned long last_time = 0;
 static unsigned long last_data_time = 0;
 static bool data_received = false;
 bool mono_output = true;
-extern char metadata[81];
+extern char track_metadata[81];
 extern volatile int audio_level;
 
 void bt_play() { a2dp_sink.play(); }
@@ -72,10 +72,13 @@ void bt_audio_data_callback(const uint8_t *data, uint32_t len)
 }
 
 void avrc_metadata_callback(uint8_t id, const uint8_t *text)
-{                                                                                                                                                                                                                                                                                                   
-    Serial.printf("AVRCP Metadata: %s\n", text);
-    strncpy(metadata, (const char *)text, 80);
-    metadata[80] = 0;
+{         
+    if (text && strlen((const char*)text) > 0 && metadataQueue) {
+        xQueueSend(metadataQueue, text, 0); // Non-blocking
+    }                                                                                                                                                                                                                                                                                          
+    // Serial.printf("AVRCP Metadata: %s\n", text);
+    // strncpy(metadata, (const char *)text, 80);
+    // metadata[80] = 0;
 }
 
 void bt_connection_state_changed(esp_a2d_connection_state_t state, void *ptr)

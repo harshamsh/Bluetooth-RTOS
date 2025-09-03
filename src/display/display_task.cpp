@@ -5,14 +5,26 @@
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE);
 
 // Shared metadata buffer (update from your AVRCP callback)
-char metadata[81] = "No track info";
+char track_metadata[81] = "No track info";
 volatile int meta_scroll = 0;
+QueueHandle_t metadataQueue = NULL;
 
 // Shared audio level (update from audio callback)
 volatile int audio_level = 0;
 
+void updateMetadataFromQueue() {
+    char new_metadata[81];
+    if (metadataQueue && xQueueReceive(metadataQueue, new_metadata, 0) == pdTRUE) {
+        if (strlen(new_metadata) > 0) {
+            strncpy(track_metadata, new_metadata, 80);
+            track_metadata[80] = 0;
+        }
+    }
+}
+
 void displayTask(void *pvParameters) {
     Serial.println("Display task started");
+    metadataQueue = xQueueCreate(2, 81);
     u8g2.begin();
     u8g2.clearBuffer();
     u8g2.setContrast(255);
@@ -24,20 +36,23 @@ void displayTask(void *pvParameters) {
     while (1) {
         u8g2.clearBuffer();
 
+        // Update metadata from queue
+        updateMetadataFromQueue();
+
         // Draw scrolling metadata (top 2 lines)
-        int meta_len = strlen(metadata);
+        int meta_len = strlen(track_metadata);
         int scroll_pos = meta_scroll % (meta_len + 16); // 16 chars visible
         char line[17] = {0};
         if (meta_len > 16) {
             if (scroll_pos + 16 <= meta_len)
-                strncpy(line, metadata + scroll_pos, 16);
+                strncpy(line, track_metadata + scroll_pos, 16);
             else {
                 int first = meta_len - scroll_pos;
-                strncpy(line, metadata + scroll_pos, first);
-                strncpy(line + first, metadata, 16 - first);
+                strncpy(line, track_metadata + scroll_pos, first);
+                strncpy(line + first, track_metadata, 16 - first);
             }
         } else {
-            strncpy(line, metadata, 16);
+            strncpy(line, track_metadata, 16);
         }
         u8g2.setFont(u8g2_font_6x12_tr);
         u8g2.drawStr(0, 12, line);
