@@ -51,7 +51,7 @@ src/
 | **MAX98357A**   |           |                 |                              |
 | BCLK            | GPIO 26   | BCLK            | I2S Bit Clock                |
 | LRCK            | GPIO 25   | LRC             | I2S Word Select (Left/Right) |
-| DIN             | GPIO 22   | DIN             | I2S Data Out                 |
+| DIN             | GPIO 18   | DIN             | I2S Data Out (**UPDATED**)   |
 | VCC             | 3.3V      | VIN             | Power                        |
 | GND             | GND       | GND             | Ground                       |
 | **Speaker**     | -         | SPK+ / SPK-     | Connect to MAX98357A output  |
